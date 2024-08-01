@@ -13,7 +13,7 @@
 
 **DOCENTE:** *ANDERSON MICHEL TORRES*
 
-
+--------------------------------------------------------------------------------------------
 CONSIGNAS.
 
 SE DEBE ENTREGAR:
@@ -32,7 +32,7 @@ SCRIPT DE CREACIÓN DE VISTAS, FUNCIONES,STORED PROCEDURES Y TRIGGERS.
 FORMATO:
 DOCUMENTO PDF CON EL NOMBRE “ENTREGA2 + APELLIDO”.
 
-
+----------------------------------------------------------------------------------------
 
 **LISTADO DE VISTAS.**
 
