@@ -112,12 +112,12 @@ ALTER TABLE ACTIVIDADES
 
 -- ------------------------------------
 
--- "2° PREENTREGA"
+-- "2° PREENTREGA DEL TRABAJO FINAL"
 
 -- Vamos a insertar datos
 
 -- desactivamos la validación de clave foranea
--- SET foreign_key_checks = 0;
+SET foreign_key_checks = 0;
 
 -- vamos a insertar datos en las tablas con el siguiente orden: dueno, sede, socios, profesores, actividades y reservas.
 
@@ -293,5 +293,201 @@ INSERT INTO RESERVAS (ID_RESERVA, FECHA_HORA, CANCELACION, ID_SOCIO, ID_ACTIVIDA
 -- select * from  socios;
 -- select * from  reservas;
 
+
+
+-- VISTA N° 1.ALTA DE SOCIOS ENTRE EL 01 DE ENERO DE 2024 Y 30 DE JUNIO DE 2024.
+USE PROYECTO_RESERVAS;
+CREATE OR REPLACE VIEW VISTA_SOCIOS_FILTRO AS
+(SELECT ID_SOCIO, NOMBRE, APELLIDO,FECHA_ALTA
+FROM SOCIOS
+WHERE FECHA_ALTA BETWEEN '2024-01-01 00:00:00' AND '2024-06-30 23:59:59');
+
+-- SELECT * FROM VISTA_SOCIOS_FILTRO;
+
+-- VISTA N° 2.RESERVAS CON LA ACTIVIDAD FUTBOL
+USE PROYECTO_RESERVAS;
+CREATE OR REPLACE VIEW VISTA_RESERVAS_FUTBOL AS
+(SELECT ID_RESERVA,ID_ACTIVIDAD,ID_SEDE  
+FROM RESERVAS
+WHERE ID_ACTIVIDAD = 12);
+
+-- SELECT * FROM VISTA_RESERVAS_FUTBOL;
+
+-- VISTA N° 3. ACTIVIDAD SPINNING
+USE PROYECTO_RESERVAS;
+CREATE OR REPLACE VIEW VISTA_SPINNING AS
+(SELECT 
+	a.ID_ACTIVIDAD,
+    a.NOMBRE AS ACTIVIDAD,
+    p.APELLIDO AS PROFESOR,
+    s.direccion AS DIRECCION_DE_SEDE
+FROM ACTIVIDADES a
+JOIN PROFESORES p ON A.ID_ACTIVIDAD = P.ID_ACTIVIDAD
+JOIN SEDE s ON  p.ID_SEDE = s.ID_SEDE
+WHERE 
+	A.NOMBRE = 'SPINNING');
+
+-- SELECT * FROM VISTA_SPINNING;
+
+
+-- VISTA N° 4. VISTA DE PROFESORES Y ACTIVIDADES POR SEDE --
+USE PROYECTO_RESERVAS;
+CREATE OR REPLACE VIEW PROFESORES_SEDE AS
+(SELECT 
+	SEDE.ID_SEDE, 
+	PROFESORES.APELLIDO AS PROFESOR,
+	ACTIVIDADES.NOMBRE AS ACTIVIDAD
+FROM PROFESORES
+JOIN SEDE ON SEDE.ID_SEDE = PROFESORES.ID_SEDE
+JOIN ACTIVIDADES ON PROFESORES.ID_PROFESOR = ACTIVIDADES.ID_PROFESOR);
+
+-- SELECT * FROM PROFESORES_SEDE;
+
+
+-- VISTA N° 5. VISTA DE LAS RESERVAS DE LA ACTIVIDAD "PILATES"-
+USE PROYECTO_RESERVAS;
+CREATE OR REPLACE VIEW RESERVAS_PILATES AS
+(SELECT 
+	RESERVAS.ID_ACTIVIDAD,
+	ACTIVIDADES.NOMBRE AS ACTIVIDAD,
+	RESERVAS.FECHA_HORA AS DISPONIBILIDAD, 
+	SEDE.DIRECCION AS DIRECCION
+FROM ACTIVIDADES
+JOIN RESERVAS ON RESERVAS.ID_ACTIVIDAD = ACTIVIDADES.ID_ACTIVIDAD
+JOIN SEDE ON SEDE.ID_SEDE = RESERVAS.ID_SEDE
+WHERE RESERVAS.ID_ACTIVIDAD = 2);
+
+-- SELECT * FROM RESERVAS_PILATES;
+
+
+-- VISTA N° 6. VISTA CON LAS ACTIVIDADES QUE DICTAMOS.
+USE PROYECTO_RESERVAS;
+CREATE OR REPLACE VIEW VISTA_ACTIVIDADES AS
+(SELECT ID_ACTIVIDAD, NOMBRE 
+FROM ACTIVIDADES);
+
+-- SELECT * FROM VISTA_ACTIVIDADES;
+
+-- ----------------------------FUNCIONES-----------------------------------------
+-- Función para contar el número de reservas de un socio específico--
+DROP FUNCTION IF EXISTS contar_reservas_socio;
+DELIMITER //
+CREATE FUNCTION contar_reservas_socio(socio_id INT)
+RETURNS INT
+DETERMINISTIC
+BEGIN
+    DECLARE num_reservas INT;
+    SELECT COUNT(*) INTO num_reservas
+    FROM RESERVAS
+    WHERE ID_SOCIO = socio_id;
+    RETURN num_reservas;
+END //
+DELIMITER ;
+
+-- EJEMPLO DE USO.SE CONSULTARÁ POR EL SOCIO 8--
+-- SELECT contar_reservas_socio(8) AS num_reservas;
+
+-- Función para obtener la dirección de la sede donde un profesor dicta una actividad--
+DROP FUNCTION IF EXISTS obtener_profesor_actividad;
+DELIMITER //
+CREATE FUNCTION obtener_profesor_actividad(actividad_nombre VARCHAR(50))
+RETURNS VARCHAR(100)
+DETERMINISTIC
+BEGIN
+    DECLARE profesor_nombre VARCHAR(100);
+    SELECT CONCAT(p.NOMBRES, ' ', p.APELLIDO) INTO profesor_nombre
+    FROM ACTIVIDADES a
+    JOIN PROFESORES p ON a.ID_PROFESOR = p.ID_PROFESOR
+    WHERE a.NOMBRE = actividad_nombre;
+    RETURN profesor_nombre;
+END //
+DELIMITER ;
+
+-- EJEMPLO DE USO:SE CONSULTARÁ EL NOMBRE DEL PROFESOR QUE DICTA SPINNING--
+-- SELECT obtener_profesor_actividad('Spinning') AS profesor_nombre;
+
+-- Función para obtener el nombre completo de un profesor que dicta una actividad específica--
+DROP FUNCTION IF EXISTS obtener_direccion_sede;
+DELIMITER //
+CREATE FUNCTION obtener_direccion_sede(profesor_id INT)
+RETURNS VARCHAR(100)
+DETERMINISTIC
+BEGIN
+    DECLARE sede_direccion VARCHAR(100);
+    SELECT s.DIRECCION INTO sede_direccion
+    FROM SEDE s
+    JOIN PROFESORES p ON s.ID_SEDE = p.ID_SEDE
+    WHERE p.ID_PROFESOR = profesor_id;
+    RETURN sede_direccion;
+END //
+DELIMITER ;
+
+-- EJEMPLO DE USO:DIRECCION  DE LA SEDE DEL PROFESOR CON ID 30--
+-- SELECT obtener_direccion_sede(30);
+
+
+-- CREACIÓN DE STORED PROCEDURES--
+DROP PROCEDURE IF EXISTS insertar_socio;
+DELIMITER //
+CREATE PROCEDURE insertar_socio(
+    IN NOMBRE VARCHAR(50),
+    IN APELLIDO VARCHAR(50),
+    IN DNI INT,
+    IN TELEFONO INT,
+    IN MAIL VARCHAR(60),
+    IN FECHA_ALTA DATETIME
+)
+BEGIN
+    INSERT INTO SOCIOS (NOMBRE, APELLIDO, DNI, TELEFONO, MAIL, FECHA_ALTA)
+    VALUES (nombre, apellido, dni, telefono, mail, fecha_alta);
+END //
+DELIMITER ;
+
+-- EJEMPLO DE USO--
+-- CALL insertar_socio('Juan', 'Perez', 12345678, 987654321, 'juan.perez@example.com', '2024-06-15 12:00:00');
+
+-- SELECT * FROM SOCIOS;
+
+DROP PROCEDURE IF EXISTS actualizar_disponibilidad_actividad;
+DELIMITER //
+CREATE PROCEDURE actualizar_disponibilidad_actividad(
+    IN actividad_id INT,
+    IN nueva_disponibilidad BOOLEAN
+)
+BEGIN
+    UPDATE ACTIVIDADES
+    SET DISPONIBILIDAD = nueva_disponibilidad
+    WHERE ID_ACTIVIDAD = actividad_id;
+END //
+DELIMITER ;
+-- EJEMPLO DE USO-- SE CAMBIA TRUE POR FALSE--
+-- CALL actualizar_disponibilidad_actividad(1,FALSE);
+-- SELECT * FROM ACTIVIDADES;
+
+
+DROP PROCEDURE IF EXISTS actualizar_socio;
+DELIMITER //
+CREATE PROCEDURE actualizar_socio(
+    IN socio_id INT,
+    IN nuevo_nombre VARCHAR(50),
+    IN nuevo_apellido VARCHAR(50),
+    IN nuevo_dni INT,
+    IN nuevo_telefono INT,
+    IN nuevo_mail VARCHAR(60),
+    IN nueva_fecha_alta DATETIME
+)
+BEGIN
+    UPDATE SOCIOS
+    SET NOMBRE = nuevo_nombre,
+        APELLIDO = nuevo_apellido,
+        DNI = nuevo_dni,
+        TELEFONO = nuevo_telefono,
+        MAIL = nuevo_mail,
+        FECHA_ALTA = nueva_fecha_alta
+    WHERE ID_SOCIO = socio_id;
+END //
+DELIMITER ;
+-- EJEMPLO DE USO-- 
+-- CALL actualizar_socio(1, 'Mariana', 'Lopez', 87654321, 123456789, 'mariana.lopez@example.com', '2024-06-20 10:00:00');
 
 
