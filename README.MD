@@ -75,18 +75,6 @@
 
 ## **SEGUNDA PREENTREGA DE PROYECTO**
 
-
-**CURSO:** *SQL*
-
-**ALUMNA**: *RODRIGUEZ, MAYRA ALEJANDRA*
-
-**COMISIÓN:** *57190* 
-
-**TUTOR:** *ARIEL ANNONE*
-
-**DOCENTE:** *ANDERSON MICHEL TORRES*
-
-
 --------------------------------------------------------------------------------------------
 CONSIGNAS.
 
